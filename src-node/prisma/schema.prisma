@@ -25,7 +25,21 @@ enum UserStatus {
   SUSPENDED
   PENDING
 }
+enum RepoStatus {
+   PENDING
+  VALIDATING
+  REJECTED
+  PROCESSING
+  READY
+  FAILED
+}
 
+enum JobStatus{
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
 //models
 model User {
   id        String     @id @default(cuid())
@@ -38,9 +52,84 @@ model User {
   role      UserRole   @default(USER)
   status    UserStatus @default(PENDING)
 
-  onboardingCompleted Boolean @default(false)
-
+  repositories Repository[]
+  
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
 
+model Repository {
+  id            String     @id @default(cuid())
+
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+
+  githubUrl     String
+  repoName      String?
+  repoOwner     String?
+
+  status        RepoStatus @default(PENDING)
+
+  isPrivate     Boolean    @default(false)
+  sizeKb        Int?
+  defaultBranch String?
+
+  ingestionJobs IngestionJob[]
+  files         RepoFile[]
+  structure     RepoStructure?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+ 
+model IngestionJob {
+  id            String    @id @default(cuid())
+
+  repositoryId  String
+  repository    Repository @relation(fields: [repositoryId], references: [id])
+
+  status        JobStatus @default(QUEUED)
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  errorMessage  String?
+
+  createdAt     DateTime  @default(now())
+}
+
+model RepoFile {
+  id            String     @id @default(cuid())
+
+  repositoryId  String
+  repository    Repository @relation(fields: [repositoryId], references: [id])
+
+  path          String
+  name          String
+  extension     String?
+  sizeBytes     Int?
+  language      String?
+
+  createdAt     DateTime   @default(now())
+
+  @@index([repositoryId])
+}
+
+model RepoStructure {
+  id            String     @id @default(cuid())
+
+  repositoryId  String     @unique
+  repository    Repository @relation(fields: [repositoryId], references: [id])
+
+  structureJson Json       // tree used by AI agent
+
+  createdAt     DateTime   @default(now())
+}
+
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  clerkId     String
+  type        String
+  payload     Json
+  processed   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+}
