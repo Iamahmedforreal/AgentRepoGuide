@@ -1,12 +1,10 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import authRoute from './routes/authRoute.js';
-dotenv.config();
+import config from './config/env.js';
 
 const app = express();
+const { NODE_ENV, PORT } = config;
 
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // body parser middleware with size limit
