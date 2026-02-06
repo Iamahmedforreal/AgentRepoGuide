@@ -14,7 +14,8 @@
     "@clerk/express": "^1.7.69",
     "@prisma/client": "^7.3.0",
     "dotenv": "^17.2.3",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "svix": "^1.84.1"
   },
   "devDependencies": {
     "prisma": "^6.19.2"
