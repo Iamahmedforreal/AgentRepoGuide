@@ -18,14 +18,20 @@ export const clerkWebhookHandler = async (req, res) => {
     const eventType = evt.type;
     const eventData = evt.data || {};
     const userId = eventData.id || eventData.user_id;
+    const webhookId = headers['svix-id'] 
 
-    // Handle different event types
-    console.log(`✓ Received event: ${eventType} for user: ${userId}`);
+    const alreadyProcessed = await WebhookService.isWebhookbeenProcessed(webhookId);
+    
+    if (alreadyProcessed){
+        console.log(`Webhook event ${webhookId} has already been processed. Skipping.`);
+    }
 
+    await WebhookService.saveWebhookEvent(webhookId, eventType, eventData);
+ 
     // Example: Handle specific event types
     switch (eventType) {
       case 'user.created':
-        console.log(`New user created: ${userId}`);
+       await userService.handleUserCreated(eventData);
         break;
       case 'user.updated':
         console.log(`User updated: ${userId}`);

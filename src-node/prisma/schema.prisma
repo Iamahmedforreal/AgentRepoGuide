@@ -11,6 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // Enums
@@ -55,7 +56,7 @@ model User {
   repositories Repository[]
   
   createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+
 }
 
 model Repository {
@@ -126,10 +127,9 @@ model RepoStructure {
 
 model WebhookEvent {
   id          String   @id @default(cuid())
-  clerkId     String
+  clerkId     String @unique
   type        String
   payload     Json
   processed   Boolean  @default(false)
-
   createdAt   DateTime @default(now())
 }
