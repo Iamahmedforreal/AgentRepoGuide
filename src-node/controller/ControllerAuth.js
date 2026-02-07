@@ -55,13 +55,13 @@ export const clerkWebhookHandler = async (req, res) => {
         console.log(`Processing webhook ${svix_id} (${eventType})`);
 
         switch (eventType) {
-          case 'session.created':
+          case 'user.created':
             await UserService.handleUserCreateEvent(eventData);
             break;
-          case 'session.updated':
+          case 'user.updated':
             await UserService.handleUserUpdateEvent(eventData);
             break;
-          case 'session.deleted':
+          case 'user.deleted':
             await UserService.handleUserDeleteEvent(eventData);
             break;
           default:
