@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -43,20 +43,29 @@ enum JobStatus{
 }
 //models
 model User {
-  id        String     @id @default(cuid())
-  clerkId   String     @unique
-
-  email     String?
-  firstName String?
-  lastName  String?
-
-  role      UserRole   @default(USER)
-  status    UserStatus @default(PENDING)
+  id        String    @id @default(cuid())
+  clerkId   String    @unique  // Clerk's user ID (user_xxx)
+  
+  email           String?   @unique
+  firstName       String?
+  lastName        String?
+  username        String?   @unique
+  profileImageUrl String?
+  
+  // Account Status
+  banned        Boolean   @default(false)
+  deletedAt     DateTime? // Soft delete timestamp
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  lastLoginAt DateTime?
 
   repositories Repository[]
-  
-  createdAt DateTime   @default(now())
 
+
+  @@index([clerkId])
+  @@index([email])
+  @@index([deletedAt]) // For filtering active users
 }
 
 model Repository {
