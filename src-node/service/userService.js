@@ -1,31 +1,11 @@
 import prisma from '../lib/prisma.js';
-import { createClerkClient } from '@clerk/express';
-import config from '../config/env.js';
-
-const clerkClient = createClerkClient({ secretKey: config.CLERK_SECRET_KEY });
+import { clerkClient } from '@clerk/express';
 class UserService {
     async handleUserCreateEvent(eventData) {
-        const userId = eventData.id;
-        let email = eventData.email_addresses?.[0]?.email_address;
-        
-        if (!email) {
-            try {
-                
-                const user = await clerkClient.users.getUser(userId);
-                email = user.emailAddresses?.[0]?.emailAddress;
-            } catch (err) {
-                console.warn(`[UserService] Could not fetch user ${userId} from Clerk API:`, err.message);
-            }
-        }
-
-        if (!email) {
-            console.warn(`[UserService] User ${userId} has no email address. Proceeding with null.`);
-        }
-
         return prisma.User.upsert({
             where: { clerkId: userId },
             update: {
-                email: email,
+                email: eventData.email_addresses?.[0]?.email_address,
                 firstName: eventData.first_name,
                 lastName: eventData.last_name,
                 username: eventData.username,
@@ -33,7 +13,7 @@ class UserService {
             },
             create: {
                 clerkId: userId,
-                email: email,
+                email: eventData.email_addresses?.[0]?.email_address,
                 firstName: eventData.first_name,
                 lastName: eventData.last_name,
                 username: eventData.username,
