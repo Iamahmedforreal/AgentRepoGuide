@@ -1,14 +1,13 @@
 import express from 'express';
 import authRoute from './routes/authRoute.js';
 import config from './config/env.js';
-import { verify } from 'crypto';
 
 const app = express();
 const { NODE_ENV, PORT } = config;
 
 // global middlewares (limit to 10kb)
 app.use(express.json({
-    verify: (req, res, buf , encoding) => {
+    verify: (req, res, buf, encoding) => {
         req.rawBody = buf.toString(encoding || 'utf-8');
     }
 })

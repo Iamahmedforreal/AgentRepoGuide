@@ -1,11 +1,28 @@
 import prisma from '../lib/prisma.js';
-import { clerkClient } from '@clerk/express';
+import { createClerkClient } from '@clerk/express';
+import config from '../config/env.js';
+
+const clerkClient = createClerkClient({ secretKey: config.CLERK_SECRET_KEY });
+
 class UserService {
     async handleUserCreateEvent(eventData) {
+        const userId = eventData.id;
+        let email = eventData.email_addresses?.[0]?.email_address;
+
+        // Fallback for private OAuth emails
+        if (!email) {
+            try {
+                const user = await clerkClient.users.getUser(userId);
+                email = user.emailAddresses?.[0]?.emailAddress;
+            } catch (err) {
+                console.warn(`[UserService] Could not fetch user ${userId} from Clerk API:`, err.message);
+            }
+        }
+
         return prisma.User.upsert({
             where: { clerkId: userId },
             update: {
-                email: eventData.email_addresses?.[0]?.email_address,
+                email: email,
                 firstName: eventData.first_name,
                 lastName: eventData.last_name,
                 username: eventData.username,
@@ -13,7 +30,7 @@ class UserService {
             },
             create: {
                 clerkId: userId,
-                email: eventData.email_addresses?.[0]?.email_address,
+                email: email,
                 firstName: eventData.first_name,
                 lastName: eventData.last_name,
                 username: eventData.username,
@@ -23,7 +40,7 @@ class UserService {
     }
 
     async handleUserUpdateEvent(eventData) {
-        return this.handleUserCreateEvent(eventData); 
+        return this.handleUserCreateEvent(eventData);
     }
 
     async handleUserDeleteEvent(eventData) {
@@ -34,4 +51,5 @@ class UserService {
         });
     }
 }
+
 export default new UserService();
