@@ -66,7 +66,7 @@ export const clerkWebhookHandler = async (req, res) => {
           await WebhookService.markWebhookAsProcessed(clerkEventId);
         }
       } catch (procErr) {
-        console.error(`Error processing webhook ${clerkEventId}:`, procErr);
+        throw new AppError(`Error processing webhook: ${procErr.message}`, procErr.statusCode || 500);
       }
     })();
 
