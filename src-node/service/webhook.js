@@ -2,6 +2,7 @@
 import prisma from '../lib/prisma.js';
 class WebhookService {
     async isWebhookbeenProcessed(eventId) {
+        //return true if event with clerkId (eventId) exists, false otherwise
         const existing = await prisma.WebhookEvent.findUnique({
             where: { clerkId: eventId }
         });
