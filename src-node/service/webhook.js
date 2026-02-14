@@ -10,6 +10,7 @@ class WebhookService {
     }
 
     async recordWebhookEvent(eventId, type, payload) {
+        // Store the full event payload for later inspection, along with type and processed status
         return prisma.WebhookEvent.create({
             data: {
                 clerkId: eventId,
