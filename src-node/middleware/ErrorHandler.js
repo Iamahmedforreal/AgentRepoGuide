@@ -1,5 +1,6 @@
 import config from '../config/env.js';
 
+// server error handler middleware
 const sendErrorDev = (err, res) => {
     res.status(err.statusCode).json({
         status: err.status,
