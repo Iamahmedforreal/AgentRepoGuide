@@ -40,7 +40,7 @@ export const clerkWebhookHandler = async (req, res) => {
     // Acknowledge quickly
     res.status(200).json({ success: true, message: "Webhook received" });
 
-    
+    //async processing of the webhook event
     (async () => {
       try {
         console.log(`Processing webhook ${clerkEventId} (${eventType})`);
