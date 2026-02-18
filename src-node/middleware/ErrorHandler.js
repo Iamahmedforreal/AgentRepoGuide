@@ -22,7 +22,7 @@ const sendErrorProd = (err, res) => {
         console.error('ERROR ', err);
         res.status(500).json({
             status: 'error',
-            message: 'Something went very wrong!'
+            message: 'Something went  wrong!'
         });
     }
 };
