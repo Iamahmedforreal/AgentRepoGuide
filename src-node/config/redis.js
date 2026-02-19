@@ -1,8 +1,7 @@
 import Redis from "ioredis";
-
 //a Redis client with retry strategy
-const redisClient = new Redis({
-    host: "redis",
+const redis = new Redis({
+    host: "127.0.0.1",
     port:6379,
     retryStrategy(times) {
         const delay = Math.min(times * 50, 2000);
@@ -15,11 +14,11 @@ const redisClient = new Redis({
 });
 
 
-Redis.on("error", (err) => {
+redis.on("error", (err) => {
     console.error("Redis error: ", err);
 });
-Redis.on("connect", () => {
+redis.on("connect", () => {
     console.log("Connected to Redis");
 });
 
-export default redisClient;
+export default redis;
