@@ -1,0 +1,22 @@
+services:
+  redis:
+    image: redis:7.0.11
+    container_name: redis
+    restart: always
+    volumes:
+      - redis_volume_data:/data
+    ports:
+      - "6379:6379"
+
+  redis_insight:
+    image: redis/redisinsight:latest
+    container_name: redis_insight
+    restart: always
+    ports:
+      - "8001:8001"
+    volumes:
+      - redis_insight_volume_data:/data
+
+volumes:
+  redis_volume_data:
+  redis_insight_volume_data:
