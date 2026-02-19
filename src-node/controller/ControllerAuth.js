@@ -2,6 +2,7 @@ import { Webhook } from "svix";
 import config from "../config/env.js";
 import { UserService, WebhookService } from "../service/index.js";
 import { AppError } from "../utils/AppError.js";
+import { error } from "console";
 
 export const clerkWebhookHandler = async (req, res) => {
   const headers = req.headers;
@@ -9,7 +10,6 @@ export const clerkWebhookHandler = async (req, res) => {
   try {
     const wh = new Webhook(config.CLERK_WEBHOOK_SIGNING_SECRET);
 
-    
     const payload = req.rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
 
     let evt;
@@ -17,14 +17,12 @@ export const clerkWebhookHandler = async (req, res) => {
       evt = wh.verify(payload, headers);
     } catch (verifyErr) {
       throw new AppError(`Webhook signature verification failed: ${verifyErr.message}`, 400);
-      
     }
 
     const eventType = evt.type;
     const eventData = evt.data || {};
 
-    // Use Clerk's event id when present, otherwise fallback to svix-id header
-    const clerkEventId = evt.id || headers['svix-id'] || null;
+    const clerkEventId = evt.id || headers['svix-id'] || headers['clerk-event-id'] ;
     if (!clerkEventId) {
       throw new AppError("Missing event ID for webhook", 400);
     } else {
@@ -66,14 +64,13 @@ export const clerkWebhookHandler = async (req, res) => {
           await WebhookService.markWebhookAsProcessed(clerkEventId);
         }
       } catch (procErr) {
-        throw new AppError(`Error processing webhook: ${procErr.message}`, procErr.statusCode || 500);
+        console.error(`Error processing webhook ${clerkEventId}:`, procErr);
       }
     })();
 
   } catch (err) {
-    console.error("Internal Webhook Error:", err);
-    if (!res.headersSent) {
-      throw new AppError(`Webhook processing failed: ${err.message}`, err.statusCode || 500);
+    if (err instanceof AppError) throw err;{
+      throw new AppError(`Error handling webhook: ${err.message}`, err.statusCode || 500);
     }
   }
 };
