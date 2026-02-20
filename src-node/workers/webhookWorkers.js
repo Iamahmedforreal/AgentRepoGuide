@@ -1,9 +1,9 @@
 import redis from "../config/redis";
 import {WEBHOOK_QUEUE_NAME} from "../config/queue.js";
 import { UserService } from "../service/index.js";
-
+// Worker to process webhook events from the queue
 export const webhookWorker = new Worker(WEBHOOK_QUEUE_NAME, async job => {
-    const { type, data, eventid } = job.data;
+    const { type, data, eventId } = job.data;
     try {
     switch (type) {
         case 'user.created':
@@ -13,7 +13,7 @@ export const webhookWorker = new Worker(WEBHOOK_QUEUE_NAME, async job => {
             await UserService.handleUserUpdateEvent(data);
             break;
         case 'user.deleted':
-            await UserService.handleUserDeleteEvent(data);
+            await UserService.handleUserDeleteEvent(data.id);
             break;
         default:
             console.warn(`Unhandled webhook event type: ${type}`);

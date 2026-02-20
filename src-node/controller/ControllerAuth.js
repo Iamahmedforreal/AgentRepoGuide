@@ -2,7 +2,8 @@ import { Webhook } from "svix";
 import config from "../config/env.js";
 import { UserService, WebhookService } from "../service/index.js";
 import { AppError } from "../utils/AppError.js";
-import { error } from "console";
+import { webhookQueue } from "../config/queue.js";
+
 
 export const clerkWebhookHandler = async (req, res) => {
   const headers = req.headers;
@@ -21,52 +22,23 @@ export const clerkWebhookHandler = async (req, res) => {
 
     const eventType = evt.type;
     const eventData = evt.data || {};
-
-    const clerkEventId = evt.id || headers['svix-id'] || headers['clerk-event-id'] ;
-    if (!clerkEventId) {
-      throw new AppError("Missing event ID for webhook", 400);
-    } else {
+    const clerkEventId = evt.id || headers['svix-id'] || null;
+    
       const alreadyProcessed = await WebhookService.isWebhookbeenProcessed(clerkEventId);
       if (alreadyProcessed) {
         return res.status(200).json({ success: true, message: "Already processed" });
       }
 
       // Record the webhook (store full event for later inspection)
-      await WebhookService.recordWebhookEvent(clerkEventId, eventType, evt);
-    }
+    await WebhookService.recordWebhookEvent(clerkEventId, eventType, evt);
+
+    // Enqueue the event for processing by workers
+    await webhookQueue.add({ type: eventType, data: eventData, eventId: clerkEventId });
+    
 
     // Acknowledge quickly
     res.status(200).json({ success: true, message: "Webhook received" });
 
-    //async processing of the webhook event
-    (async () => {
-      try {
-        console.log(`Processing webhook ${clerkEventId} (${eventType})`);
-
-        switch (eventType) {
-          case 'user.created':
-          case 'user.updated':
-            await UserService.handleUserCreateEvent(eventData);
-            break;
-          case 'user.deleted':
-            await UserService.handleUserDeleteEvent(eventData);
-            break;
-          case 'session.created':
-            if (eventData.user) {
-              await UserService.handleUserCreateEvent(eventData.user);
-            }
-            break;
-          default:
-            console.warn(`Unhandled Clerk event type: ${eventType}`);
-        }
-
-        if (clerkEventId) {
-          await WebhookService.markWebhookAsProcessed(clerkEventId);
-        }
-      } catch (procErr) {
-        console.error(`Error processing webhook ${clerkEventId}:`, procErr);
-      }
-    })();
 
   } catch (err) {
     if (err instanceof AppError) throw err;{
