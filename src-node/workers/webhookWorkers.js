@@ -1,6 +1,7 @@
-import redis from "../config/redis";
+import redis from "../config/redis.js";
 import {WEBHOOK_QUEUE_NAME} from "../config/queue.js";
 import { UserService } from "../service/index.js";
+import { Worker } from "bullmq";
 // Worker to process webhook events from the queue
 export const webhookWorker = new Worker(WEBHOOK_QUEUE_NAME, async job => {
     const { type, data, eventId } = job.data;
@@ -17,11 +18,14 @@ export const webhookWorker = new Worker(WEBHOOK_QUEUE_NAME, async job => {
             break;
         default:
             console.warn(`Unhandled webhook event type: ${type}`);
+            break;
  
         }
 }catch(err) {
         console.error(`Error processing webhook event: ${err.message}`);
+        throw err; 
     }
+
 }, {
     connection: redis,
     concurrency: 5

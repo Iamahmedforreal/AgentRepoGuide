@@ -1,7 +1,7 @@
 import {Queue} from "bullmq";
 import redis from "./redis.js";
 
-const WEBHOOK_QUEUE_NAME = "webhook-processing";
+export const WEBHOOK_QUEUE_NAME = "webhook-processing";
 
 export const webhookQueue = new Queue(WEBHOOK_QUEUE_NAME,  {
     connection: redis,

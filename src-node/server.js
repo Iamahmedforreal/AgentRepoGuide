@@ -4,6 +4,7 @@ import config from './config/env.js';
 import { globalErrorHandler } from './middleware/ErrorHandler.js';
 import { AppError } from './utils/AppError.js';
 import redis from './config/redis.js';
+import './workers/webhookWorkers.js'; 
 
 const app = express();
 const { NODE_ENV, PORT } = config;
@@ -25,9 +26,9 @@ app.get('/', (req, res) => {
 app.use('/api', authRoute);
 
 // Handle unhandled routes
-//app.use((req, res, next) => {
-   // next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-//});
+app.use((req, res, next) => {
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
 
 // Global error handler
 app.use(globalErrorHandler);

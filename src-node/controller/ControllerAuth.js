@@ -31,9 +31,9 @@ export const clerkWebhookHandler = async (req, res) => {
       if(!created) {
         return res.status(200).json({ success: true, message: "Event already processed" });
       }
-   
+
     // Enqueue the event for processing by workers
-    await webhookQueue.add({ type: eventType, data: eventData, eventId: clerkEventId });
+    await webhookQueue.add("webhook-processing",{ type: eventType, data: eventData, eventId: clerkEventId });
     
 
     // Acknowledge quickly
