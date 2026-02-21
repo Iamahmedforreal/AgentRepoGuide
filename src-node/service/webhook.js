@@ -1,25 +1,26 @@
-
 import prisma from '../lib/prisma.js';
 class WebhookService {
-    async isWebhookbeenProcessed(eventId) {
-        //return true if event with clerkId (eventId) exists, false otherwise
-        const existing = await prisma.WebhookEvent.findUnique({
-            where: { clerkId: eventId }
-        });
-        return !!existing;
-    }
 
-    async recordWebhookEvent(eventId, type, payload) {
-        // Store the full event payload for later inspection, along with type and processed status
-        return prisma.WebhookEvent.create({
-            data: {
-                clerkId: eventId,
-                type: type,
-                payload: payload,
-                processed: false
+    async recordIfnew(eventId , type, payload) {
+        try{
+            const event = await prisma.WebhookEvent.create({
+                data: {
+                    clerkId: eventId,
+                    type: type,
+                    payload: payload,
+                    createdAt: new Date(),
+                }
+
+            })
+            return{created: true, event};
+
+        }catch(err) {
+            if (err.code === 'P2002') {
+                return {created: false, message: 'Event already exists'};
             }
-        });
+            throw err;
     }
+}
 
     async markWebhookAsProcessed(eventId) {
         return prisma.WebhookEvent.update({

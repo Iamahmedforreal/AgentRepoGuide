@@ -6,32 +6,32 @@ import { webhookQueue } from "../config/queue.js";
 
 
 export const clerkWebhookHandler = async (req, res) => {
-  const headers = req.headers;
-
   try {
+    const headers = req.headers;
+    const rawBody = req.rawBody
     const wh = new Webhook(config.CLERK_WEBHOOK_SIGNING_SECRET);
 
-    const payload = req.rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
-
+    
     let evt;
     try {
-      evt = wh.verify(payload, headers);
+      evt = wh.verify(rawBody, headers);
     } catch (verifyErr) {
       throw new AppError(`Webhook signature verification failed: ${verifyErr.message}`, 400);
     }
 
     const eventType = evt.type;
-    const eventData = evt.data || {};
+    const eventData = evt.data 
     const clerkEventId = evt.id || headers['svix-id'] || null;
+
+    if (!clerkEventId) {
+      throw new AppError('Cannot determine event ID from payload or headers', 400);
+    }
     
-      const alreadyProcessed = await WebhookService.isWebhookbeenProcessed(clerkEventId);
-      if (alreadyProcessed) {
-        return res.status(200).json({ success: true, message: "Already processed" });
+      const {created} = await WebhookService.recordIfnew(clerkEventId, eventType, evt);
+      if(!created) {
+        return res.status(200).json({ success: true, message: "Event already processed" });
       }
-
-      // Record the webhook (store full event for later inspection)
-    await WebhookService.recordWebhookEvent(clerkEventId, eventType, evt);
-
+   
     // Enqueue the event for processing by workers
     await webhookQueue.add({ type: eventType, data: eventData, eventId: clerkEventId });
     
@@ -41,8 +41,7 @@ export const clerkWebhookHandler = async (req, res) => {
 
 
   } catch (err) {
-    if (err instanceof AppError) throw err;{
-      throw new AppError(`Error handling webhook: ${err.message}`, err.statusCode || 500);
-    }
+    console.error(`Error handling webhook: ${err.message}`);
+    res.status(err.statusCode || 500);
   }
 };

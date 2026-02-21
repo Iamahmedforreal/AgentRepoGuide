@@ -8,22 +8,26 @@ import redis from './config/redis.js';
 const app = express();
 const { NODE_ENV, PORT } = config;
 
-// global middlewares (limit to 10kb)
+
 app.use(express.json({
-    verify: (req, res, buf, encoding) => {
-        req.rawBody = buf.toString(encoding || 'utf-8');
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString();
     }
 })
 );
 app.use(express.urlencoded({ limit: '10kb', extended: true }));
 
+app.get('/', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+})
+
 // api routes
 app.use('/api', authRoute);
 
 // Handle unhandled routes
-app.use((req, res, next) => {
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-});
+//app.use((req, res, next) => {
+   // next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+//});
 
 // Global error handler
 app.use(globalErrorHandler);

@@ -139,6 +139,5 @@ model WebhookEvent {
   clerkId     String @unique
   type        String
   payload     Json
-  processed   Boolean  @default(false)
   createdAt   DateTime @default(now())
 }
