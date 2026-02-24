@@ -3,7 +3,7 @@ import prisma from '../lib/prisma.js';
 class UserService {
     // Handles both user creation and updates by upserting the user record
     async handleUserCreateEvent(eventData) {
-        // eventData may be either a user object or contain nested fields
+     
         const userId = eventData.id || eventData.user_id || eventData.user?.id;
         if (!userId) {
             throw new Error('Cannot determine user id from event payload');

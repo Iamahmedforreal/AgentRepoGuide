@@ -1,6 +1,6 @@
 import prisma from '../lib/prisma.js';
 class WebhookService {
-
+// Records the webhook event if it's new, otherwise returns a message indicating it already exists
     async recordIfnew(eventId , type, payload) {
         try{
             const event = await prisma.WebhookEvent.create({
