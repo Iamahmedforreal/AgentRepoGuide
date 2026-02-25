@@ -50,6 +50,8 @@ export const config = {
   // Features
   DEBUG: process.env.DEBUG === 'true',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+
+  GITHUB_TOKEN: process.env.GITHUB_TOKEN
   
   // Validation
   isDevelopment: nodeEnv === 'development',
@@ -77,5 +79,6 @@ export const CLERK_PUBLISHABLE_KEY = config.CLERK_PUBLISHABLE_KEY;
 export const DATABASE_URL = config.DATABASE_URL;
 export const DEBUG = config.DEBUG;
 export const LOG_LEVEL = config.LOG_LEVEL;
+export 
 
 export default config;
