@@ -3,4 +3,4 @@ import { getUserurls } from '../controllers/urlController.js';
 const urlRouter = express.Router();
 
 
-urlRouter.get('/shorten', getUserurls);
+urlRouter.get('/repositories', getUserurls);
