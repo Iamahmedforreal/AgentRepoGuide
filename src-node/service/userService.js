@@ -35,6 +35,7 @@ class UserService {
         });
     }
 
+    // For simplicity, we can treat updates the same as creates since upsert will handle both cases
     async handleUserUpdateEvent(eventData) {
         return this.handleUserCreateEvent(eventData); 
     }
