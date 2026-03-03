@@ -35,11 +35,19 @@ enum RepoStatus {
   FAILED
 }
 
+
 enum JobStatus{
   QUEUED
   RUNNING
   COMPLETED
   FAILED
+}
+enum FileStatus {
+  PENDING       // file discovered, not yet processed
+  PROCESSING    // currently being chunked/embedded
+  EMBEDDED      // vectors stored, ready for RAG
+  SKIPPED       // ignored (binary, too large, irrelevant type)
+  FAILED        // something went wrong
 }
 //models
 model User {
@@ -69,29 +77,33 @@ model User {
 }
 
 model Repository {
-  id            String     @id @default(cuid())
-
+  id            String      @id @default(cuid())  
   userId        String
-  user          User       @relation(fields: [userId], references: [id])
-
+  user          User        @relation(fields: [userId], references: [id])
   githubUrl     String
   repoName      String?
   repoOwner     String?
-
-  status        RepoStatus @default(PENDING)
-
-  isPrivate     Boolean    @default(false)
-  sizeKb        Int?
   defaultBranch String?
-
+  isPrivate     Boolean     @default(false)
+  sizeKb        Int?
+  description   String?     
+  language      String?     
+  topics        String[]    
+  stars         Int?        
+  license       String?     
+  isArchived    Boolean     @default(false) 
+  repoCreatedAt DateTime?   
+  repoUpdatedAt DateTime?   
+  status        RepoStatus  @default(PENDING)
   ingestionJobs IngestionJob[]
   files         RepoFile[]
-  structure     RepoStructure?
-
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime    @default(now())  
+  updatedAt     DateTime    @updatedAt       
+  @@unique([userId, githubUrl])  
+  @@index([userId])              
+  @@index([language])             
+  @@index([status])               
 }
- 
 model IngestionJob {
   id            String    @id @default(cuid())
 
@@ -107,31 +119,44 @@ model IngestionJob {
 }
 
 model RepoFile {
-  id            String     @id @default(cuid())
+  id              String      @id @default(cuid())
 
-  repositoryId  String
-  repository    Repository @relation(fields: [repositoryId], references: [id])
+  // ─── Relationship ───────────────────────────────────────
+  repositoryId    String
+  repository      Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
-  path          String
-  name          String
-  extension     String?
-  sizeBytes     Int?
-  language      String?
+  // ─── File Identity ──────────────────────────────────────
+  filePath        String      // "src/lib/auth/jwt.js"
+  fileName        String      // "jwt.js"
+  extension       String?     // "js" — for filtering by type
+  language        String?     // "JavaScript" — detected by GitHub API
 
-  createdAt     DateTime   @default(now())
+  // ─── Content ────────────────────────────────────────────
+  rawContent      String?     @db.Text   // full file content (nullable — fetch on demand)
+  contentHash     String?     // SHA of content — detect if file changed on re-ingestion
+  sizeBytes       Int?        // guard: skip files over your limit (e.g. 500kb)
+  lineCount       Int?        // useful for chunking decisions
 
+  // ─── RAG Signals ────────────────────────────────────────
+  isEntryPoint    Boolean     @default(false)  // index.js, main.py — boost in ranking
+  isTest          Boolean     @default(false)  // test files — optionally exclude from RAG
+  isGenerated     Boolean     @default(false)  // dist/, build/ — usually skip these
+
+  // ─── Pipeline State ─────────────────────────────────────
+  status          FileStatus  @default(PENDING)
+  skippedReason   String?     // why it was skipped e.g. "binary file", "too large"
+ 
+
+  // ─── Timestamps ─────────────────────────────────────────
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // ─── Indexes ────────────────────────────────────────────
+  @@unique([repositoryId, filePath])   // same file can't be stored twice per repo
   @@index([repositoryId])
-}
-
-model RepoStructure {
-  id            String     @id @default(cuid())
-
-  repositoryId  String     @unique
-  repository    Repository @relation(fields: [repositoryId], references: [id])
-
-  structureJson Json       // tree used by AI agent
-
-  createdAt     DateTime   @default(now())
+  @@index([status])                    // worker queries: WHERE status = PENDING
+  @@index([language])                  // RAG pre-filter by language
+  @@index([extension])                 // quickly find all .md or .ts files
 }
 
 model WebhookEvent {
