@@ -22,22 +22,39 @@ class UrlService {
             owner,
             repo
         })
-        return{
-            githubUrl: data.data.html_url,
-            repoName: data.data.name,
-            repoOwner: data.data.owner.login,
-            isPrivate: data.data.private,
-            sizeKb: data.data.size,
-            defaultBranch: data.data.default_branch,
-
+        const metadata  = {
+            githubUrl: url,
+            ...data.data
         }
+        return await this.mapMetadataToDbFields(metadata);
     }catch(err){
         throw new AppError('Error fetching repository data from GitHub', 500);
     }
     }
 
+   
+    async mapMetadataToDbFields(metadata) {
 
-    async getOwnerAndRepoFromUrl(url) {
+         return {
+           githubUrl: metadata.githubUrl,
+           repoName: metadata.name,
+           repoOwner: metadata.owner.login,
+           isPrivate: metadata.private,
+           sizeKb: metadata.size,
+           defaultBranch: metadata.default_branch,
+           description: metadata.description,
+           language: metadata.language,
+           topics: metadata.topics || [],
+           stars: metadata.stargazers_count,
+           license: metadata.license?.name,
+           isArchived: metadata.archived,
+           repoCreatedAt: new Date(metadata.created_at),
+           repoUpdatedAt: new Date(metadata.updated_at)
+    };
+}
+
+    
+     getOwnerAndRepoFromUrl(url) {
         const parseUrl = new URL(url);
         if (parseUrl.hostname !== 'github.com') {
             throw new Error("URL must be from github.com");
@@ -63,16 +80,11 @@ class UrlService {
         if (existingRepo) {
             throw new AppError('Repository already exists', 409);
         }
+        const mappedData = await this.mapMetadataToDbFields(metadata);
 
         return  await prisma.repository.create({
      data: {
-        userId,
-        githubUrl: metadata.githubUrl,
-         repoName: metadata.repoName,
-         repoOwner: metadata.repoOwner,
-        isPrivate: metadata.isPrivate,
-        sizeKb: metadata.sizeKb,
-        defaultBranch: metadata.defaultBranch,
+        ...mappedData,
         status: 'PENDING',
         ingestionJobs: {
           create: {
