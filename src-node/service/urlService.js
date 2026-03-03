@@ -15,18 +15,8 @@ class UrlService {
             throw new Error("Invalid GitHub URL");
         }
 
-        const parseUrl = new URL(url);
-        if (parseUrl.hostname !== 'github.com') {
-            throw new Error("URL must be from github.com");
-        }
-        
-        const pathParts = parseUrl.pathname.split('/').filter(part => part.length > 0);
-        if (pathParts.length < 2) {
-            throw new Error("GitHub URL must be in the format: https://github.com/username/repository");
-        }
-        const owner = pathParts[0];
-        const repo = pathParts[1].replace(/.git$/, ''); 
-   
+        const { owner, repo } = this.getOwnerAndRepoFromUrl(url);
+
         try{
         const data = await octokit.rest.repos.get({
             owner,
@@ -44,6 +34,22 @@ class UrlService {
     }catch(err){
         throw new AppError('Error fetching repository data from GitHub', 500);
     }
+    }
+
+
+    async getOwnerAndRepoFromUrl(url) {
+        const parseUrl = new URL(url);
+        if (parseUrl.hostname !== 'github.com') {
+            throw new Error("URL must be from github.com");
+        }
+        const pathParts = parseUrl.pathname.split('/').filter(part => part.length > 0);
+        if (pathParts.length < 2) {
+            throw new Error("GitHub URL must be in the format: https://github.com/username/repository");
+        }
+        return {
+            owner: pathParts[0],
+            repo: pathParts[1].replace(/.git$/, '')
+        };
     }
 
     // Saves the URL metadata to the database and creates 
