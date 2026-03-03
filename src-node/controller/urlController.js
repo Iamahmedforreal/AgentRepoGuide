@@ -1,6 +1,6 @@
 import { AppError } from '../utils/AppError';
 import urlService from '../service/urlService';
-import { error } from 'console';
+
 
 export const getUserurls = async (req, res) => {
     try{
@@ -13,7 +13,7 @@ export const getUserurls = async (req, res) => {
         const savedUrl = await urlService.saveUrl(metadata, req.user.id);
         res.status(200).json({ success: true, data: savedUrl });
     }catch(err){
-        throw new AppError('Error fetching user URLs', 500);
+        next(err);
     }
     
 

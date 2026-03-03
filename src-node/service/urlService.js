@@ -11,11 +11,15 @@ class UrlService {
 
     // Parses a GitHub URL and extracts the owner and repository name
     async parseGithubUrl(url) {
-        if (!validator.isURL(url, ["github.com"])){
+        if (!validator.isURL(url, { require_protocol: true, hostWhitelist: ['github.com'] })){
             throw new Error("Invalid GitHub URL");
         }
 
         const parseUrl = new URL(url);
+        if (parseUrl.hostname !== 'github.com') {
+            throw new Error("URL must be from github.com");
+        }
+        
         const pathParts = parseUrl.pathname.split('/').filter(part => part.length > 0);
         if (pathParts.length < 2) {
             throw new Error("GitHub URL must be in the format: https://github.com/username/repository");
@@ -24,7 +28,7 @@ class UrlService {
         const repo = pathParts[1].replace(/.git$/, ''); 
    
         try{
-        const data = await Octokit.rest.repos.get({
+        const data = await octokit.rest.repos.get({
             owner,
             repo
         })
@@ -34,17 +38,25 @@ class UrlService {
             repoOwner: data.data.owner.login,
             isPrivate: data.data.private,
             sizeKb: data.data.size,
-            defaultBranch: data.data.default_branch
+            defaultBranch: data.data.default_branch,
+
         }
     }catch(err){
         throw new AppError('Error fetching repository data from GitHub', 500);
     }
-
-
     }
 
     // Saves the URL metadata to the database and creates 
     async saveUrl(metadata, userId) {
+        const existingRepo = await prisma.repository.findUnique({
+            where: {
+                githubUrl: metadata.githubUrl
+            }
+        });
+
+        if (existingRepo) {
+            throw new AppError('Repository already exists', 409);
+        }
 
         return  await prisma.repository.create({
      data: {
