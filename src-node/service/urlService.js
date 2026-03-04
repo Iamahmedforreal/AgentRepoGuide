@@ -112,25 +112,24 @@ class UrlService {
                     userId,
                     ...mappedData,
                     status: 'PENDING',
-                    ingestionJobs:{
+                    IngestionJob:{
                         create: {
                             status:"QUEUED"
                         }
-                    },
-                    select:{
-                        id: true,
-                        githubUrl: true,
-                        repoName: true,
-                        repoOwner: true,
-                        description: true,
-                        ingestionJobs: {
-                            select: {
-                                id: true,
-                                status: true
-                            }
+                    }
+                },
+                select:{
+                    id: true,
+                    githubUrl: true,
+                    repoName: true,
+                    repoOwner: true,
+                    description: true,
+                    ingestionJob: {
+                        select: {
+                            id: true,
+                            status: true
                         }
                     }
-
                 }
             })
             return repository;
