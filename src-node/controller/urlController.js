@@ -1,8 +1,8 @@
-import { AppError } from '../utils/AppError';
-import urlService from '../service/urlService';
+import { AppError } from '../utils/AppError.js';
+import urlService from '../service/urlService.js';
 
 
-export const getUserurls = async (req, res) => {
+export const getUserurls = async (req, res, next) => {
     try{
         const { url } = req.body;
         if(!url || typeof url !== 'string'){

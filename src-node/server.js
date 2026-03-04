@@ -5,6 +5,7 @@ import { globalErrorHandler } from './middleware/ErrorHandler.js';
 import { AppError } from './utils/AppError.js';
 import redis from './config/redis.js';
 import './workers/webhookWorkers.js'; 
+import urlRoute from './routes/urlRoute.js';
 
 const app = express();
 const { NODE_ENV, PORT } = config;
@@ -24,6 +25,7 @@ app.get('/', (req, res) => {
 
 // api routes
 app.use('/api', authRoute);
+app.use('/api/urls', urlRoute);
 
 // Handle unhandled routes
 app.use((req, res, next) => {
