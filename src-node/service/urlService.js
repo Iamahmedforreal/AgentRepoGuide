@@ -11,7 +11,7 @@ class UrlService {
 
     // Parses a GitHub URL and extracts the owner and repository name
     async parseGithubUrl(url) {
-        if (!validator.isURL(url, { require_protocol: true, hostWhitelist: ['github.com'] })){
+        if (!validator.isURL(url, { require_protocol: true, host_whitelist: ['github.com'] })){
             throw new Error("Invalid GitHub URL");
         }
 
