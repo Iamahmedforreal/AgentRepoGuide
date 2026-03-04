@@ -14,6 +14,10 @@ class UrlService {
         if (!validator.isURL(url, { require_protocol: true, host_whitelist: ['github.com'] })){
             throw new Error("Invalid GitHub URL");
         }
+        const {hostname} = new URL(url);
+        if(hostname !== 'github.com'){
+            throw new AppError('URL must be a GitHub repository URL', 400);
+        }
 
         const { owner, repo } = this.getOwnerAndRepoFromUrl(url);
 
@@ -56,9 +60,6 @@ class UrlService {
     
      getOwnerAndRepoFromUrl(url) {
         const parseUrl = new URL(url);
-        if (parseUrl.hostname !== 'github.com') {
-            throw new Error("URL must be from github.com");
-        }
         const pathParts = parseUrl.pathname.split('/').filter(part => part.length > 0);
         if (pathParts.length < 2) {
             throw new Error("GitHub URL must be in the format: https://github.com/username/repository");
