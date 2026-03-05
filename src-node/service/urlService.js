@@ -10,6 +10,7 @@ const octokit = new Octokit({ auth: config.GITHUB_TOKEN });
 
 class UrlService {
 
+    // Validate and parse GitHub URL, fetch metadata
   async parseGithubUrl(url) {
     
     if (!validator.isURL(url, { require_protocol: true, host_whitelist: ['github.com'] })) {
