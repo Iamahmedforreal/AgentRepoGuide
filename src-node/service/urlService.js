@@ -39,6 +39,7 @@ class UrlService {
   }
 
 
+// Map GitHub API response to our database schema
   mapMetadataToDbFields(data) {
     return {
       githubUrl:     data.html_url,
