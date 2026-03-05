@@ -59,6 +59,7 @@ class UrlService {
     };
   }
 
+  // Extract owner and repo name from GitHub URL
   getOwnerAndRepoFromUrl(url) {
     const parsedUrl = new URL(url);
     const pathParts = parsedUrl.pathname.split('/').filter(p => p.length > 0);
