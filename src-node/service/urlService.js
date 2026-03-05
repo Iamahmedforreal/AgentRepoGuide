@@ -75,6 +75,7 @@ class UrlService {
     };
   }
 
+  // Save URL metadata to the database, ensuring no duplicates for the same user
   async saveUrl(metadata, userId) {
    
     const existingRepo = await prisma.repository.findUnique({
