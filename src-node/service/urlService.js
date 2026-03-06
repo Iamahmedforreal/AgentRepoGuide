@@ -13,7 +13,7 @@ class UrlService {
     // Validate and parse GitHub URL, fetch metadata
   async parseGithubUrl(url) {
     
-    if (!validator.isURL(url, { require_protocol: true, host_whitelist: ['github.com'] })) {
+    if (!validator.isURL(url, { require_protocol: true })) {
       throw new AppError('Invalid GitHub URL', 400);
     }
 
