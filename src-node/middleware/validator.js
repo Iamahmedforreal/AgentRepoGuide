@@ -1,20 +1,20 @@
-export const validateRequest = (schema) => async (req, res, next) => {
-    try{
-        await schema.parseAsync(
-            {
-                body: req.body,
-                query: req.query,
-                params: req.params
-            }
-        );
-        next();
+import { AppError } from '../utils/AppError.js';
 
-    }catch(err){
-        const errors = err.errors.map(e => ({
-            field: e.path.join('.'),
+export const validateRequest = (schema) => async (req, res, next) => {
+    try {
+        await schema.parseAsync({
+            body: req.body,
+            query: req.query,
+            params: req.params
+        });
+        next();
+    } catch (err) {
+        // Zod v4 exposes issues on err.issues; v3 uses err.errors – handle both
+        const issues = err.issues ?? err.errors ?? [];
+        const details = issues.map(e => ({
+            field: Array.isArray(e.path) ? e.path.join('.') : String(e.path),
             message: e.message
-        }))
-        next(new AppError('Validation failed', 400, errors));
-        
+        }));
+        next(new AppError('Validation failed', 400, details));
     }
-}
+};

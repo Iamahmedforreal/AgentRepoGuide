@@ -5,11 +5,10 @@ import urlService from '../service/urlService.js';
 export const getUserurls = async (req, res, next) => {
     try{
         const { url } = req.body;
-        if(!url || typeof url !== 'string'){
-            throw new AppError('Invalid URL provided', 400);
-        }   
+        const userId = "cmlwfty7s0005fwkgdoy4k8hh"
+         
         const metadata = await urlService.parseGithubUrl(url);
-        const savedUrl = await urlService.saveUrl(metadata, req.user.id);
+        const savedUrl = await urlService.saveUrl(metadata, userId);
         res.status(200).json({ success: true, data: savedUrl });
     }catch(err){
         next(err);

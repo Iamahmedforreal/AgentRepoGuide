@@ -1,5 +1,4 @@
 // urlService.js
-import validator from 'validator';
 import { URL } from 'url';
 import prisma from '../lib/prisma.js';
 import { Octokit } from 'octokit';
@@ -8,35 +7,32 @@ import config from '../config/env.js';
 
 const octokit = new Octokit({ auth: config.GITHUB_TOKEN });
 
+// Segment allowlist: only alphanumerics, hyphens, underscores, and dots
+const SAFE_SEGMENT = /^[\w.\-]+$/;
+
 class UrlService {
 
     // Validate and parse GitHub URL, fetch metadata
-  async parseGithubUrl(url) {
-    
-    if (!validator.isURL(url, { require_protocol: true })) {
-      throw new AppError('Invalid GitHub URL', 400);
-    }
+    async parseGithubUrl(url) {
 
-    
-    const { hostname } = new URL(url);
-    if (hostname !== 'github.com') {
-      throw new AppError('URL must be from github.com', 400);
-    }
+        // Runtime hostname guard (defence-in-depth – Zod already checks this in middleware)
+        const { hostname } = new URL(url);
+        if (hostname !== 'github.com') {
+            throw new AppError('URL must be from github.com', 400);
+        }
 
-  
-    const { owner, repo } = this.getOwnerAndRepoFromUrl(url);
+        const { owner, repo } = this.getOwnerAndRepoFromUrl(url);
 
-   
-    try {
-      const { data } = await octokit.rest.repos.get({ owner, repo });
-      return this.mapMetadataToDbFields(data); 
-    } catch (err) {
-      if (err.status === 404) throw new AppError('Repository not found or is private', 404);
-      if (err.status === 403) throw new AppError('GitHub API rate limit exceeded', 429);
-      if (err.status === 401) throw new AppError('Invalid GitHub token', 401);
-      throw new AppError('Error fetching repository data from GitHub', 500);
+        try {
+            const { data } = await octokit.rest.repos.get({ owner, repo });
+            return this.mapMetadataToDbFields(data);
+        } catch (err) {
+            if (err.status === 404) throw new AppError('Repository not found or is private', 404);
+            if (err.status === 403) throw new AppError('GitHub API rate limit exceeded', 429);
+            if (err.status === 401) throw new AppError('Invalid GitHub token', 401);
+            throw new AppError('Error fetching repository data from GitHub', 500);
+        }
     }
-  }
 
 
 // Map GitHub API response to our database schema
@@ -61,23 +57,33 @@ class UrlService {
 
   // Extract owner and repo name from GitHub URL
   getOwnerAndRepoFromUrl(url) {
-    const parsedUrl = new URL(url);
-    const pathParts = parsedUrl.pathname.split('/').filter(p => p.length > 0);
-    if (pathParts.length < 2) {
-      throw new AppError(
-        'GitHub URL must be in the format: https://github.com/username/repository',
-        400
-      );
-    }
-    return {
-      owner: pathParts[0],
-      repo: pathParts[1].replace(/\.git$/, ''),
-    };
-  }
+        const parsedUrl = new URL(url);
+        const pathParts = parsedUrl.pathname.split('/').filter(p => p.length > 0);
+        if (pathParts.length < 2) {
+            throw new AppError(
+                'GitHub URL must be in the format: https://github.com/username/repository',
+                400
+            );
+        }
 
-  // Save URL metadata to the database, ensuring no duplicates for the same user
-  async saveUrl(metadata, userId) {
-   
+        const owner = pathParts[0];
+        const repo  = pathParts[1].replace(/\.git$/, '');
+
+        // Defence-in-depth: ensure segments contain only safe characters
+        // before forwarding to the GitHub API
+        if (!SAFE_SEGMENT.test(owner) || !SAFE_SEGMENT.test(repo)) {
+            throw new AppError(
+                'Repository owner or name contains invalid characters',
+                400
+            );
+        }
+
+        return { owner, repo };
+    }
+
+    // Save URL metadata to the database, ensuring no duplicates for the same user
+    async saveUrl(metadata, userId) {
+
     const existingRepo = await prisma.repository.findUnique({
       where: {
         userId_githubUrl: { userId, githubUrl: metadata.githubUrl }

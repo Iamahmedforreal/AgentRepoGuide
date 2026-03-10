@@ -12,11 +12,11 @@ const { NODE_ENV, PORT } = config;
 
 
 app.use(express.json({
+    limit: '10kb',
     verify: (req, res, buf) => {
         req.rawBody = buf.toString();
     }
-})
-);
+}));
 app.use(express.urlencoded({ limit: '10kb', extended: true }));
 
 app.get('/', (req, res) => {

@@ -6,26 +6,30 @@ const sendErrorDev = (err, res) => {
         status: err.status,
         error: err,
         message: err.message,
+        details: err.details?.length ? err.details : undefined,
         stack: err.stack
     });
 };
 
 const sendErrorProd = (err, res) => {
-    // Operational, trusted error: 
+    // Operational, trusted error: send message to client
     if (err.isOperational) {
         res.status(err.statusCode).json({
             status: err.status,
-            message: err.message
+            message: err.message,
+            // Include field-level detail only for client errors (4xx)
+            ...(err.details?.length && { details: err.details })
         });
     } else {
-        // Programming or other unknown error
+        // Programming or other unknown error – leak nothing
         console.error('ERROR ', err);
         res.status(500).json({
             status: 'error',
-            message: 'Something went  wrong!'
+            message: 'Something went wrong!'
         });
     }
 };
+
 
 export const globalErrorHandler = (err, req, res, next) => {
     err.statusCode = err.statusCode || 500;
