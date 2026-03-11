@@ -14,6 +14,7 @@
     "@clerk/express": "^1.7.69",
     "@prisma/client": "6.19.2",
     "bullmq": "^5.69.3",
+    "child_process": "^1.0.2",
     "dotenv": "^17.2.3",
     "nodemon": "^3.1.11",
     "svix": "^1.84.1",
