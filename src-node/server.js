@@ -4,7 +4,7 @@ import config from './config/env.js';
 import { globalErrorHandler } from './middleware/ErrorHandler.js';
 import { AppError } from './utils/AppError.js';
 import redis from './config/redis.js';
-import './workers/webhookWorkers.js'; 
+import './workers/webhookWorkers.js';
 import urlRoute from './routes/urlRoute.js';
 
 const app = express();
@@ -12,7 +12,6 @@ const { NODE_ENV, PORT } = config;
 
 
 app.use(express.json({
-    limit: '10kb',
     verify: (req, res, buf) => {
         req.rawBody = buf.toString();
     }

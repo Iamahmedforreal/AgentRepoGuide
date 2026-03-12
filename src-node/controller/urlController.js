@@ -8,6 +8,7 @@ export const getUserurls = async (req, res, next) => {
         const userId = req.user.id;
         const metadata = await urlService.parseGithubUrl(url);
         const savedUrl = await urlService.saveUrl(metadata, userId);
+
         res.status(200).json({ success: true, data: savedUrl });
     }catch(err){
         next(err);

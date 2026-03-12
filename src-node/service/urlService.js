@@ -5,12 +5,16 @@ import { Octokit } from 'octokit';
 import { AppError } from '../utils/AppError.js';
 import config from '../config/env.js';
 
+
+
+
 const octokit = new Octokit({ auth: config.GITHUB_TOKEN });
 
-// Segment allowlist: only alphanumerics, hyphens, underscores, and dots
+
 const SAFE_SEGMENT = /^[\w.\-]+$/;
 
 class UrlService {
+
 
     // Validate and parse GitHub URL, fetch metadata
     async parseGithubUrl(url) {
@@ -26,6 +30,9 @@ class UrlService {
         try {
             const { data } = await octokit.rest.repos.get({ owner, repo });
             return this.mapMetadataToDbFields(data);
+
+
+
         } catch (err) {
             if (err.status === 404) throw new AppError('Repository not found or is private', 404);
             if (err.status === 403) throw new AppError('GitHub API rate limit exceeded', 429);
@@ -56,7 +63,7 @@ class UrlService {
   }
 
   // Extract owner and repo name from GitHub URL
-  getOwnerAndRepoFromUrl(url) {
+   getOwnerAndRepoFromUrl(url) {
         const parsedUrl = new URL(url);
         const pathParts = parsedUrl.pathname.split('/').filter(p => p.length > 0);
         if (pathParts.length < 2) {
@@ -69,8 +76,7 @@ class UrlService {
         const owner = pathParts[0];
         const repo  = pathParts[1].replace(/\.git$/, '');
 
-        // Defence-in-depth: ensure segments contain only safe characters
-        // before forwarding to the GitHub API
+       
         if (!SAFE_SEGMENT.test(owner) || !SAFE_SEGMENT.test(repo)) {
             throw new AppError(
                 'Repository owner or name contains invalid characters',
@@ -82,43 +88,40 @@ class UrlService {
     }
 
     // Save URL metadata to the database, ensuring no duplicates for the same user
-    async saveUrl(metadata, userId) {
-
+   
+async saveUrl(metadata, userId) {
     const existingRepo = await prisma.repository.findUnique({
-      where: {
-        userId_githubUrl: { userId, githubUrl: metadata.githubUrl }
-      }
+        where: { userId_githubUrl: { userId, githubUrl: metadata.githubUrl } }
     });
 
-    if (existingRepo) {
-      throw new AppError('Repository already exists', 409);
-    }
+    if (existingRepo) throw new AppError('Repository already exists', 409);
 
-    return await prisma.$transaction(async (tx) => {
-      return await tx.repository.create({  
-        data: {
-          userId,
-          ...metadata,                     
-          status: 'PENDING',
-          ingestionJobs: {                
-            create: { status: 'QUEUED' }
-          }
-        },
-        select: {                          
-          id: true,
-          githubUrl: true,
-          repoName: true,
-          repoOwner: true,
-          description: true,
-          status: true,
-          createdAt: true,
-          ingestionJobs: {
-            select: { id: true, status: true }
-          }
-        }
-      });
+    
+    const repo = await prisma.$transaction(async (tx) => {
+        return await tx.repository.create({
+            data: {
+                userId,
+                ...metadata,
+                status: 'PENDING',
+                ingestionJobs: {
+                    create: { status: 'QUEUED' }
+                }
+            },
+            select: {
+                id: true,
+                githubUrl: true,
+                repoName: true,
+                repoOwner: true,
+                description: true,
+                status: true,
+                createdAt: true,
+                ingestionJobs: {
+                    select: { id: true, status: true }
+                }
+            }
+        });
     });
-  }
+    return repo;
 }
-
+}
 export default new UrlService();

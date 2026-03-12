@@ -95,6 +95,7 @@ model Repository {
   repoCreatedAt DateTime?   
   repoUpdatedAt DateTime?   
   status        RepoStatus  @default(PENDING)
+  localPath     String?     // absolute path on disk where the repo was cloned
   ingestionJobs IngestionJob[]
   files         RepoFile[]
   createdAt     DateTime    @default(now())  
