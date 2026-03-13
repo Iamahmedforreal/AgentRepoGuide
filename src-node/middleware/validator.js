@@ -2,9 +2,11 @@ import { AppError } from '../utils/AppError.js';
 
 export const validateRequest = (schema) => async (req, res, next) => {
     try {
-        await schema.parseAsync({
+        req.body =( await schema.parseAsync({
             body: req.body,
-        });
+
+        })).body;
+    
         next();
     } catch (err) {
         // Zod v4 exposes issues on err.issues; v3 uses err.errors – handle both

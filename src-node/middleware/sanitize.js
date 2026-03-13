@@ -4,6 +4,10 @@ const ALLOWED_BODY_FIELDS = new Set(['url']);
 export const sanitizeRequestBody = (req, res, next) => {
     try{
 
+        // Ensure body is a JSON object
+        if(!req.body || typeof req.body !== 'object' ){
+            return next(new AppError('Request body must be a JSON object', 400));
+        }
         // reject any unknown fields in the request body
         const unkonwnKeys = Object.keys(req.body).filter((k) => !ALLOWED_BODY_FIELDS.has(k));
         if(unkonwnKeys.length > 0){
