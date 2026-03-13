@@ -4,22 +4,12 @@ import prisma from '../lib/prisma.js';
 import { Octokit } from 'octokit';
 import { AppError } from '../utils/AppError.js';
 import config from '../config/env.js';
-
-
-
-
 const octokit = new Octokit({ auth: config.GITHUB_TOKEN });
-
-
-const SAFE_SEGMENT = /^[\w.\-]+$/;
-
 class UrlService {
 
 
     // Validate and parse GitHub URL, fetch metadata
-    async parseGithubUrl(url) {
-
-        // Runtime hostname guard (defence-in-depth – Zod already checks this in middleware)
+     parseGithubUrl = async (url) => {
         const { hostname } = new URL(url);
         if (hostname !== 'github.com') {
             throw new AppError('URL must be from github.com', 400);
