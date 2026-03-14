@@ -5,6 +5,7 @@ import { globalErrorHandler } from './middleware/ErrorHandler.js';
 import { AppError } from './utils/AppError.js';
 import redis from './config/redis.js';
 import './workers/webhookWorkers.js';
+import './workers/cloneWorkers.js';
 import urlRoute from './routes/urlRoute.js';
 
 const app = express();

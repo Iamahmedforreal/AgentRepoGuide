@@ -4,7 +4,15 @@ import prisma from '../lib/prisma.js';
 import { Octokit } from 'octokit';
 import { AppError } from '../utils/AppError.js';
 import config from '../config/env.js';
+import { exec as execCb } from 'child_process';
+import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
+import { repoCloneQueue } from '../config/queue.js';
+
+const exec = promisify(execCb);
 const octokit = new Octokit({ auth: config.GITHUB_TOKEN });
+const SAFE_SEGMENT = /^[a-zA-Z0-9._-]+$/; 
 class UrlService {
 
 
@@ -111,7 +119,37 @@ async saveUrl(metadata, userId) {
             }
         });
     });
+
+    const jobId = repo.ingestionJobs?.[0]?.id;
+    if (jobId) {
+        await repoCloneQueue.add('repo-clone', {
+            jobId,
+            repoId: repo.id,
+            githubUrl: repo.githubUrl,
+            repoOwner: repo.repoOwner,
+            repoName: repo.repoName,
+        });
+    }
+
     return repo;
 }
+  async _cloneRepository(githubUrl, repoOwner, repoName) {
+    const localPath = path.resolve('clone_repo', `${repoOwner}_${repoName}`);
+
+    // Clean up any existing directory
+    if (fs.existsSync(localPath)) {
+      fs.rmSync(localPath, { recursive: true, force: true });
+    }
+
+    await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
+
+    try {
+      await exec(`git clone --depth 1 ${githubUrl} "${localPath}"`);
+    } catch (err) {
+      throw new AppError('Error cloning repository', 500);
+    }
+
+    return localPath;
+  }
 }
 export default new UrlService();
